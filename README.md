@@ -26,37 +26,3 @@ AWS Network Firewall のファイアウォールポリシーを、運用フェ�
 
 ## アーキテクチャ (Architecture)
 
-```mermaid
-graph TD
-    Op[Operator / Tool] -->|Invoke with JSON| Lambda[Policy Swapper]
-    Lambda -->|AssociateFirewallPolicy| ANF[AWS Network Firewall]
-    
-    subgraph Policy States [ファイアウォールポリシーの状態]
-        Normal[通常ファイアウォールポリシー<br/>(厳格なホワイトリスト)]
-        Maint[メンテナンス用ファイアウォールポリシー<br/>(RHEL CDN許可/監査)]
-    end
-    
-    ANF -.-> Normal
-    ANF -.-> Maint
-
-使い方 (Usage)Lambda 関数を以下のペイロード（JSON）で実行します。1. メンテナンスモードに入るOSアップデートなどの作業開始時に実行します。JSON{
-  "mode": "maintenance"
-}
-2. 通常モードに戻す作業終了時に実行します。※ mode を省略した場合も自動的に normal になります（安全設計）。JSON{
-  "mode": "normal"
-}
-環境変数 (Environment Variables)この関数を動作させるために、以下の環境変数を設定してください。変数名説明FIREWALL_ARN対象となる Network Firewall の ARNNORMAL_POLICY_ARN通常時（Normal）に使用するファイアウォールポリシーの ARNMAINTENANCE_POLICY_ARNメンテナンス時（Maintenance）に使用するファイアウォールポリシーの ARN必要な権限 (IAM Permissions)この Lambda 関数には、以下の権限を持つ IAM ロールを付与してください。JSON{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "network-firewall:AssociateFirewallPolicy"
-            ],
-            "Resource": "arn:aws:network-firewall:region:account-id:firewall/my-firewall"
-        }
-    ]
-}
-
----
-
